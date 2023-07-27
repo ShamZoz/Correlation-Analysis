@@ -1,0 +1,71 @@
+import yfinance as yf
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Function to fetch historical stock data
+def get_stock_data(ticker, period):
+    try:
+        stock_data = yf.Ticker(ticker).history(period=period)
+        return stock_data
+    except Exception as e:
+        print("Failed to fetch stock data:", e)
+        return None
+
+# Function to calculate daily returns
+def calculate_daily_returns(prices):
+    daily_returns = prices.pct_change().dropna()
+    return daily_returns
+
+# Function to perform correlation analysis
+def correlation_analysis(aapl_returns, sp500_returns):
+    correlation = aapl_returns.corr(sp500_returns)
+    return correlation
+
+def main():
+    symbol_aapl = "AAPL"
+    symbol_sp500 = "^GSPC"
+    period = "2mo"
+
+    # Step 1: Fetch historical stock data
+    aapl_data = get_stock_data(symbol_aapl, period)
+    sp500_data = get_stock_data(symbol_sp500, period)
+
+    if aapl_data is not None and sp500_data is not None:
+        # Step 2: Calculate daily returns
+        aapl_returns = calculate_daily_returns(aapl_data['Close'])
+        sp500_returns = calculate_daily_returns(sp500_data['Close'])
+
+        # Step 3: Perform correlation analysis
+        correlation = correlation_analysis(aapl_returns, sp500_returns)
+
+        # Display the correlation coefficient
+        print(f"Correlation between AAPL and S&P 500: {correlation:.4f}")
+
+        # Step 4: Visualization - Plot daily returns
+        plt.figure(figsize=(10, 6))
+        plt.plot(aapl_returns, label='AAPL Daily Returns', alpha=0.7)
+        plt.plot(sp500_returns, label='S&P 500 Daily Returns', alpha=0.7)
+        plt.title('Daily Returns of AAPL and S&P 500')
+        plt.xlabel('Date')
+        plt.ylabel('Daily Returns')
+        plt.legend()
+        plt.show()
+
+        # Step 5: Rolling Correlation - Calculate and plot rolling correlation
+        window_size = 30
+        rolling_correlation = aapl_returns.rolling(window=window_size).corr(sp500_returns)
+        plt.figure(figsize=(10, 6))
+        plt.plot(rolling_correlation, label='Rolling Correlation', alpha=0.7)
+        plt.axhline(y=correlation, color='red', linestyle='--', label='Average Correlation')
+        plt.title(f'Rolling Correlation ({window_size}-Day Window)')
+        plt.xlabel('Date')
+        plt.ylabel('Correlation')
+        plt.legend()
+        plt.show()
+
+    else:
+        print("Failed to fetch stock data.")
+
+if __name__ == "__main__":
+    main()
